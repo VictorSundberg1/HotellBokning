@@ -7,6 +7,8 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: eu-north-1
+  iam:
+    role: arn:aws:iam::770457254259:role/serverLessTesting
   # Uncomment to easily set up a custom domain. Read the docs for more details:
   # https://www.serverless.com/framework/docs/providers/aws/guide/domains
   # domain: api.example.com
