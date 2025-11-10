@@ -67,3 +67,25 @@ This will start a local emulator of AWS Lambda and tunnel your requests to and f
 Now you can invoke the function as before, but this time the function will be executed locally. Now you can develop your function locally, invoke it, and see the results immediately without having to re-deploy.
 
 When you are done developing, don't forget to run `serverless deploy` to deploy the function to the cloud.
+
+room:
+id: 1
+type: Enkel
+capacity: 1
+price: 500kr
+available: True
+
+GET rooms
+GET bookings
+
+DELETE bookings/{bookingNr}
+Sätter room.availability till true
+
+POST booking
+bookingNr: uuid
+namn:
+epost:
+antal gäster:
+bokade rum: rum 1
+Datum in:
+Datum ut:

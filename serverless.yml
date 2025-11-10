@@ -12,9 +12,53 @@ provider:
   # domain: api.example.com
 
 functions:
-  hello:
-    handler: handler.hello
+  getRooms:
+    handler: functions/getRooms/index.handler
     events:
       - httpApi:
-          path: /
-          method: get
+        path: /rooms
+        method: GET
+  getBookings:
+    handler: functions/getBookings/index.handler
+    events:
+      - httpApi:
+        path: /bookings
+        method: GET
+  deleteBookings:
+    handler: functions/deleteBookings/index.handler
+    events:
+      - httpApi:
+        path: /deleteBookings/{bookingNr}
+        method: DELETE
+  postBooking:
+    handler: functions/postBooking/index.handler
+    events:
+      - httpApi:
+        path: /booking
+        method: POST
+
+resources:
+  Resources:
+    RoomsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: rooms-table
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    BookingTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: booking-table
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
