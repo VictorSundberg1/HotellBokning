@@ -7,6 +7,8 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: eu-north-1
+  iam:
+    role: ${env:IAM_ROLE}
   # Uncomment to easily set up a custom domain. Read the docs for more details:
   # https://www.serverless.com/framework/docs/providers/aws/guide/domains
   # domain: api.example.com
@@ -16,26 +18,26 @@ functions:
     handler: functions/getRooms/index.handler
     events:
       - httpApi:
-        path: /rooms
-        method: GET
+          path: /rooms
+          method: GET
   getBookings:
     handler: functions/getBookings/index.handler
     events:
       - httpApi:
-        path: /bookings
-        method: GET
+          path: /bookings
+          method: GET
   deleteBookings:
     handler: functions/deleteBookings/index.handler
     events:
       - httpApi:
-        path: /deleteBookings/{bookingNr}
-        method: DELETE
+          path: /deleteBookings/{bookingNr}
+          method: DELETE
   postBooking:
     handler: functions/postBooking/index.handler
     events:
       - httpApi:
-        path: /booking
-        method: POST
+          path: /booking
+          method: POST
 
 resources:
   Resources:
