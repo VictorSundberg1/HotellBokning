@@ -7,14 +7,12 @@ const { v4: uuidv4 } = require('uuid');
 const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
 
-// --- RUMSUPPSÄTTNING ---
 const roomType = {
   enkel: { count: 10, price: 500 },
   dubbel: { count: 8, price: 1000 },
   svit: { count: 2, price: 1500 }
 };
 
-// Skapa lista med alla 20 rum
 const allRooms = [
   ...Array.from({ length: roomType.enkel.count }, (_, i) => `enkel${i + 1}`),
   ...Array.from({ length: roomType.dubbel.count }, (_, i) => `dubbel${i + 1}`),
@@ -25,7 +23,6 @@ exports.handler = async (event) => {
   try {
     const { name, epost, guestCount, bookedRooms, checkInDate, checkOutDate } = JSON.parse(event.body);
 
-    // --- Grundvalidering ---
     if (!name || !epost || !bookedRooms || !checkInDate || !checkOutDate) {
       return sendResponse(400, { message: 'Saknas obligatoriska fält.' });
     }
@@ -37,20 +34,17 @@ exports.handler = async (event) => {
       return sendResponse(400, { message: 'Utcheckning måste vara efter incheckning.' });
     }
 
-    // --- Kontrollera att rummen finns ---
     for (const room of bookedRooms) {
       if (!allRooms.includes(room)) {
         return sendResponse(400, { message: `Rummet ${room} finns inte.` });
       }
     }
 
-    // --- Hämta befintliga bokningar ---
-    const existing = await db.send(new ScanCommand({ TableName: 'Bookings' }));
+    const existing = await db.send(new ScanCommand({ TableName: 'booking-table' }));
 
-    // --- Dubbelbokningskontroll ---
     for (const booking of existing.Items) {
       for (const room of bookedRooms) {
-        if (booking.bookedRooms.includes(room)) {
+        if (booking.bookedRooms && booking.bookedRooms.includes(room)) {
           const existingIn = new Date(booking.checkInDate);
           const existingOut = new Date(booking.checkOutDate);
           const overlap = checkIn < existingOut && checkOut > existingIn;
@@ -64,7 +58,6 @@ exports.handler = async (event) => {
       }
     }
 
-    // --- Prisberäkning ---
     const numNights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
     let totalPrice = 0;
 
@@ -76,7 +69,6 @@ exports.handler = async (event) => {
 
     totalPrice *= numNights;
 
-    // --- Skapa bokning ---
     const booking = {
       id: uuidv4(),
       name,
@@ -88,13 +80,11 @@ exports.handler = async (event) => {
       totalPrice
     };
 
-    // --- Spara i DynamoDB ---
     await db.send(new PutCommand({
-      TableName: 'Bookings',
+      TableName: 'booking-table',
       Item: booking
     }));
 
-    // --- Returnera lyckad bokning ---
     return sendResponse(201, {
       message: 'Bokning skapad!',
       booking
