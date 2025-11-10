@@ -44,7 +44,7 @@ exports.handler = async (event, context) => {
 
 		await db.send(deleteCommand);
 
-		//Uppdaterar alla roomIds som plockats ut och sätter available till true
+		// Loopar igenom och Uppdaterar alla roomIds som plockats ut och sätter available till true
 		const updatePromises = roomIds.map((roomId) => {
 			const updateRoomCommand = new UpdateCommand({
 				TableName: 'rooms-table',
