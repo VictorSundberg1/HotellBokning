@@ -85,7 +85,7 @@ POST booking
 bookingNr: uuid
 namn:
 epost:
-antal gäster:
-bokade rum: rum 1
-Datum in:
-Datum ut:
+antal gäster: 3
+bokade rum: {"1", "2"}
+Datum in: 2025-11-10
+Datum ut: 2025-11-14
