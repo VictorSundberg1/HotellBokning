@@ -25,7 +25,8 @@ exports.handler = async (event) => {
     const { name, epost, guestCount, bookedRooms, checkInDate, checkOutDate } = JSON.parse(event.body);
     const getRoomsTable = new ScanCommand({ TableName: 'rooms-table' });
 
-    const allRooms = await db.send(getRoomsTable);
+    const roomsResult = await db.send(getRoomsTable);
+    const allRooms = roomsResult.Items.map(room => room.id);
     console.log(allRooms);
 
     if (!name || !epost || !bookedRooms || !checkInDate || !checkOutDate) {
@@ -66,10 +67,12 @@ exports.handler = async (event) => {
     const numNights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
     let totalPrice = 0;
 
-    for (const room of bookedRooms) {
-      if (room.startsWith('enkel')) totalPrice += roomType.enkel.price * numNights;
-      else if (room.startsWith('dubbel')) totalPrice += roomType.dubbel.price * numNights;
-      else if (room.startsWith('svit')) totalPrice += roomType.svit.price * numNights;
+    for (const roomId of bookedRooms) {
+      const numericRoomId = roomId.replace(/\D+/g, '');
+      const room = roomsResult.Items.find(r => r.id === numericRoomId);
+      if (room) {
+        totalPrice += room.price * numNights;
+      }
     }
 
 
