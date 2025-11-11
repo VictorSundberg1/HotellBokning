@@ -7,21 +7,27 @@ const { v4: uuidv4 } = require('uuid');
 const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
 
-const roomType = {
-  enkel: { count: 10, price: 500 },
-  dubbel: { count: 8, price: 1000 },
-  svit: { count: 2, price: 1500 }
-};
+// const roomType = {
+//   enkel: { count: 10, price: 500 },
+//   dubbel: { count: 8, price: 1000 },
+//   svit: { count: 2, price: 1500 }
+// };
 
-const allRooms = [
-  ...Array.from({ length: roomType.enkel.count }, (_, i) => `enkel${i + 1}`),
-  ...Array.from({ length: roomType.dubbel.count }, (_, i) => `dubbel${i + 1}`),
-  ...Array.from({ length: roomType.svit.count }, (_, i) => `svit${i + 1}`)
-];
+// const allRooms = [
+//   ...Array.from({ length: roomType.enkel.count }, (_, i) => `${i + 1}`),
+//   ...Array.from({ length: roomType.dubbel.count }, (_, i) => `${i + 1}`),
+//   ...Array.from({ length: roomType.svit.count }, (_, i) => `${i + 1}`)
+// ];
+
 
 exports.handler = async (event) => {
   try {
     const { name, epost, guestCount, bookedRooms, checkInDate, checkOutDate } = JSON.parse(event.body);
+    const getRoomsTable = new ScanCommand({ TableName: 'rooms-table' });
+
+    const roomsResult = await db.send(getRoomsTable);
+    const allRooms = roomsResult.Items.map(room => room.id);
+    console.log(allRooms);
 
     if (!name || !epost || !bookedRooms || !checkInDate || !checkOutDate) {
       return sendResponse(400, { message: 'Saknas obligatoriska fält.' });
@@ -61,13 +67,14 @@ exports.handler = async (event) => {
     const numNights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
     let totalPrice = 0;
 
-    for (const room of bookedRooms) {
-      if (room.startsWith('enkel')) totalPrice += roomType.enkel.price;
-      else if (room.startsWith('dubbel')) totalPrice += roomType.dubbel.price;
-      else if (room.startsWith('svit')) totalPrice += roomType.svit.price;
+    for (const roomId of bookedRooms) {
+      const numericRoomId = roomId.replace(/\D+/g, '');
+      const room = roomsResult.Items.find(r => r.id === numericRoomId);
+      if (room) {
+        totalPrice += room.price * numNights;
+      }
     }
 
-    totalPrice *= numNights;
 
     const booking = {
       id: uuidv4(),
