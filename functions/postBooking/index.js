@@ -1,0 +1,97 @@
+const { sendResponse } = require('../../responses');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
+const { v4: uuidv4 } = require('uuid');
+
+const client = new DynamoDBClient({});
+const db = DynamoDBDocumentClient.from(client);
+
+const roomType = {
+  enkel: { count: 10, price: 500 },
+  dubbel: { count: 8, price: 1000 },
+  svit: { count: 2, price: 1500 }
+};
+
+const allRooms = [
+  ...Array.from({ length: roomType.enkel.count }, (_, i) => `enkel${i + 1}`),
+  ...Array.from({ length: roomType.dubbel.count }, (_, i) => `dubbel${i + 1}`),
+  ...Array.from({ length: roomType.svit.count }, (_, i) => `svit${i + 1}`)
+];
+
+exports.handler = async (event) => {
+  try {
+    const { name, epost, guestCount, bookedRooms, checkInDate, checkOutDate } = JSON.parse(event.body);
+
+    if (!name || !epost || !bookedRooms || !checkInDate || !checkOutDate) {
+      return sendResponse(400, { message: 'Saknas obligatoriska fält.' });
+    }
+
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+
+    if (checkOut <= checkIn) {
+      return sendResponse(400, { message: 'Utcheckning måste vara efter incheckning.' });
+    }
+
+    for (const room of bookedRooms) {
+      if (!allRooms.includes(room)) {
+        return sendResponse(400, { message: `Rummet ${room} finns inte.` });
+      }
+    }
+
+    const existing = await db.send(new ScanCommand({ TableName: 'booking-table' }));
+
+    for (const booking of existing.Items) {
+      for (const room of bookedRooms) {
+        if (booking.bookedRooms && booking.bookedRooms.includes(room)) {
+          const existingIn = new Date(booking.checkInDate);
+          const existingOut = new Date(booking.checkOutDate);
+          const overlap = checkIn < existingOut && checkOut > existingIn;
+
+          if (overlap) {
+            return sendResponse(400, {
+              message: `Rum ${room} är redan bokat mellan ${booking.checkInDate} och ${booking.checkOutDate}.`
+            });
+          }
+        }
+      }
+    }
+
+    const numNights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    let totalPrice = 0;
+
+    for (const room of bookedRooms) {
+      if (room.startsWith('enkel')) totalPrice += roomType.enkel.price;
+      else if (room.startsWith('dubbel')) totalPrice += roomType.dubbel.price;
+      else if (room.startsWith('svit')) totalPrice += roomType.svit.price;
+    }
+
+    totalPrice *= numNights;
+
+    const booking = {
+      id: uuidv4(),
+      name,
+      epost,
+      guestCount,
+      bookedRooms,
+      checkInDate,
+      checkOutDate,
+      totalPrice
+    };
+
+    await db.send(new PutCommand({
+      TableName: 'booking-table',
+      Item: booking
+    }));
+
+    return sendResponse(201, {
+      message: 'Bokning skapad!',
+      booking
+    });
+
+  } catch (error) {
+    console.error('Fel vid bokning:', error);
+    return sendResponse(500, { message: 'Internt serverfel', error: error.message });
+  }
+};
