@@ -1,6 +1,6 @@
 const { sendResponse } = require('../../responses');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { PutCommand, ScanCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
 const { v4: uuidv4 } = require('uuid');
 
@@ -84,6 +84,24 @@ exports.handler = async (event) => {
       TableName: 'booking-table',
       Item: booking
     }));
+
+    // Uppdatera rummen till unavailable
+    const updatePromises = bookedRooms.map((roomId) => {
+      // Konvertera enkel1, dubbel2, svit3 till bara siffrorna 1, 2, 3
+      const numericRoomId = roomId.replace(/\D+/g, '');
+      
+      const updateRoomCommand = new UpdateCommand({
+        TableName: 'rooms-table',
+        Key: { id: numericRoomId },
+        UpdateExpression: 'SET isAvailable = :available',
+        ExpressionAttributeValues: {
+          ':available': false,
+        },
+      });
+      return db.send(updateRoomCommand);
+    });
+    
+    await Promise.all(updatePromises);
 
     return sendResponse(201, {
       message: 'Bokning skapad!',
