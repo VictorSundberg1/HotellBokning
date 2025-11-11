@@ -33,9 +33,20 @@ exports.handler = async (event, context) => {
 			};
 		}
 		// Kollar efter både lista "roomIds" och ensam string "roomId"
-		const roomIds = Array.isArray(result.Item.roomIds)
-			? result.Item.roomIds
-			: [result.Item.roomId];
+		const bookedRooms = result.Item.bookedRooms || [];
+
+		if (bookedRooms.length === 0) {
+			return {
+				statusCode: 404,
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					success: false,
+					message: 'Rooms not found',
+				}),
+			};
+		}
 
 		const deleteCommand = new DeleteCommand({
 			TableName: 'booking-table',
@@ -45,7 +56,7 @@ exports.handler = async (event, context) => {
 		await db.send(deleteCommand);
 
 		// Loopar igenom och Uppdaterar alla roomIds som plockats ut och sätter available till true
-		const updatePromises = roomIds.map((roomId) => {
+		const updatePromises = bookedRooms.map((roomId) => {
 			const updateRoomCommand = new UpdateCommand({
 				TableName: 'rooms-table',
 				Key: { id: roomId },
