@@ -32,7 +32,7 @@ exports.handler = async (event, context) => {
 				}),
 			};
 		}
-		// Kollar efter både lista "roomIds" och ensam string "roomId"
+		// Plockar ut listan av bookedRooms ur booking eller defaultar till tom lista
 		const bookedRooms = result.Item.bookedRooms || [];
 
 		if (bookedRooms.length === 0) {
@@ -44,6 +44,26 @@ exports.handler = async (event, context) => {
 				body: JSON.stringify({
 					success: false,
 					message: 'Rooms not found',
+				}),
+			};
+		}
+
+		const checkInDate = new Date(result.Item.checkInDate);
+		const todaysDate = new Date();
+
+		const lastAllowedDate = new Date(todaysDate);
+		lastAllowedDate.setDate(todaysDate.getDate() + 1);
+
+		if (checkInDate <= lastAllowedDate) {
+			return {
+				statusCode: 400,
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					success: false,
+					message:
+						'Bookings needs to be refunded atleast 2 days before check-in',
 				}),
 			};
 		}
