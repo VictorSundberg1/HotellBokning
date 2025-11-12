@@ -26,6 +26,12 @@ functions:
       - httpApi:
           path: /bookings
           method: GET
+  getBookingsByMonth:
+    handler: functions/getBookingsByMonth/index.handler
+    events:
+      - httpApi:
+          path: /bookings/{year}/{month}
+          method: GET
   deleteBookings:
     handler: functions/deleteBookings/index.handler
     events:
