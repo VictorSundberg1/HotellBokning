@@ -10,7 +10,7 @@ const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
 const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
 
-export async function handler(event) {
+exports.handler = async(event) => {
     try{
     //checka ut med  bokningsnummer 
     const {bookingNr} = JSON.parse(event.body)
