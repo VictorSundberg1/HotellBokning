@@ -20,6 +20,12 @@ functions:
       - httpApi:
           path: /rooms
           method: GET
+  checkOut:
+    handler: functions/checkOut/index.handler
+    events:
+      - httpApi:
+          path: /checkOut
+          method: POST        
   getBookings:
     handler: functions/getBookings/index.handler
     events:
