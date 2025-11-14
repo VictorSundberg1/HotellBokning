@@ -239,6 +239,36 @@ Hämta alla rum.
   }
 ]
 ```
+### **POST /checkout**
+
+Skapa en ny bokning.
+
+**Request**
+
+``` json
+
+ {
+	"bookingNr": "c0455646443-38e0-4e40-a671-b78878455c"
+}
+
+```
+
+**Response**
+
+``` json
+
+{
+	"name": "Anna nilsson",
+	"epost": "anna@nilsson.se",
+	"Ankomst_Datum": "2025-11-12",
+	"Utcheckad_Datum": "2025-11-14",
+	"Antal_personer": 1,
+	"Antal_dagar": 2,
+	"Antal_Bokade_rum": 1
+}
+```
+
+------------------------------------------------------------------------
 
 
 
